@@ -1,0 +1,22 @@
+{
+  "scopeName": "source.hltvlog",
+  "patterns": [
+    { "match": "^\\s*Round started.*$",           "name": "keyword.other.roundstart.hltv" },
+    { "match": "^\\s*Round over.*$",              "name": "keyword.other.roundend.hltv" },
+    { "match": "\\b(defused|planted) the bomb\\b", "name": "entity.name.function.bomb.hltv" },
+    {
+      "match": "\\b[A-Z]{1,3}\\b(?= \\([0-9]+-[0-9]+\\))",
+      "name": "constant.numeric.score.hltv"
+    },
+    {
+      "match": "^.+?\\s+killed\\s+.+?\\s+with\\s+.+?( \\(headshot\\))?",
+      "name": "meta.kill.hltv",
+      "captures": {
+        "1": { "name": "storage.modifier.headshot.hltv" }
+      }
+    },
+    { "match": "^.+?\\s+joined the game$", "name": "comment.line.join.hltv" },
+    { "match": "^.+?\\s+quit the game$",   "name": "comment.line.quit.hltv" },
+    { "match": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}$", "name": "comment.line.timestamp.hltv" }
+  ]
+} 

@@ -1,0 +1,116 @@
+{
+  "name": "hltv-log",
+  "displayName": "HLTV Live Match Console",
+  "description": "Live match tracking, game logs, and scoreboards for HLTV Counter-Strike matches",
+  "version": "0.3.0",
+  "publisher": "hltv-log-dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AkazaAkane/hltv-log-plugin"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Languages", "Other"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "hltvlog.openLive",
+        "title": "🔴 Start Live Match",
+        "category": "HLTV"
+      },
+      {
+        "command": "hltvlog.stopLive",
+        "title": "⏹️ Stop Live Match",
+        "category": "HLTV"
+      },
+      {
+        "command": "hltvlog.copyLog",
+        "title": "📋 Copy Game Log",
+        "category": "HLTV"
+      },
+      {
+        "command": "hltvlog.clearLog",
+        "title": "🗑️ Clear Console",
+        "category": "HLTV"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "hltvlog.openLive"
+        },
+        {
+          "command": "hltvlog.stopLive"
+        },
+        {
+          "command": "hltvlog.copyLog"
+        },
+        {
+          "command": "hltvlog.clearLog"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "HLTV Live Match Console",
+      "properties": {
+        "hltvlog.pollInterval": {
+          "type": "number",
+          "default": 3000,
+          "description": "How often to check for live updates (milliseconds)",
+          "minimum": 1000,
+          "maximum": 10000
+        },
+        "hltvlog.showScoreboard": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show live scoreboard updates"
+        },
+        "hltvlog.hideEventTypes": {
+          "type": "array",
+          "default": [],
+          "description": "Event types to hide from game log",
+          "items": {
+            "type": "string",
+            "enum": ["kill", "round_start", "round_end", "quit", "bomb", "other"]
+          }
+        }
+      }
+    },
+    "languages": [
+      {
+        "id": "hltvlog",
+        "aliases": ["HLTV Log", "hltvlog"],
+        "extensions": [".hltvlog", ".hltv.log"],
+        "filenames": [],
+        "filenamePatterns": ["hltv_*"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "hltvlog",
+        "scopeName": "source.hltvlog",
+        "path": "./syntaxes/hltv.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile"
+  },
+  "dependencies": {
+    "hltv": "^3.5.0",
+    "playwright": "^1.40.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.4.5",
+    "vsce": "^2.15.0"
+  }
+} 
