@@ -76,7 +76,7 @@
           "description": "Event types to hide from game log",
           "items": {
             "type": "string",
-            "enum": ["kill", "round_start", "round_end", "quit", "bomb", "other"]
+            "enum": ["kill", "round_start", "round_end", "quit", "bomb", "suicide", "other"]
           }
         }
       }

@@ -3,7 +3,7 @@ import { chromium, Browser, Page } from 'playwright';
 
 interface GameLogEntry {
   text: string;
-  type: 'kill' | 'round_start' | 'round_end' | 'quit' | 'bomb' | 'other';
+  type: 'kill' | 'round_start' | 'round_end' | 'quit' | 'bomb' | 'suicide' | 'other';
   className: string;
   timestamp: Date;
 }
@@ -193,35 +193,36 @@ async function extractLiveData(page: Page): Promise<MatchData | null> {
       // Get the scorebot element which contains all live data
       const scorebot = document.querySelector('.scorebot');
       
-      // Get team names from the scoreboard
+      // Get team names from the new scoreboard structure
       const team1Name = document.querySelector('.ctTeamHeaderBg .teamName')?.textContent?.trim() || 'Team 1';
       const team2Name = document.querySelector('.tTeamHeaderBg .teamName')?.textContent?.trim() || 'Team 2';
       
-      // Get current scores from the score display
+      // Get current scores from the new score display
       const ctScore = document.querySelector('.ctScore')?.textContent?.trim() || '0';
       const tScore = document.querySelector('.tScore')?.textContent?.trim() || '0';
       
-      // Get current round info
-      const currentRound = document.querySelector('.currentRoundText')?.textContent?.trim() || 'Unknown';
+      // Get current round info from the new structure
+      const currentRoundElement = document.querySelector('.currentRoundText');
+      const currentRound = currentRoundElement?.textContent?.trim() || 'Unknown';
       const roundText = document.querySelector('.roundText')?.textContent?.trim() || 'Unknown';
       
-      // Get map name from the background image or round text
-      const mapElement = document.querySelector('.currentRoundText');
-      const map = mapElement?.textContent?.includes('dust2') ? 'dust2' : 
-                 mapElement?.textContent?.includes('mirage') ? 'mirage' : 
-                 mapElement?.textContent?.includes('inferno') ? 'inferno' : 
-                 mapElement?.textContent?.includes('ancient') ? 'ancient' :
-                 mapElement?.textContent?.includes('vertigo') ? 'vertigo' :
-                 mapElement?.textContent?.includes('nuke') ? 'nuke' :
-                 mapElement?.textContent?.includes('overpass') ? 'overpass' : 'Unknown';
+      // Get map name from the round text
+      const mapText = currentRoundElement?.textContent || '';
+      const map = mapText.includes('dust2') ? 'dust2' : 
+                 mapText.includes('mirage') ? 'mirage' : 
+                 mapText.includes('inferno') ? 'inferno' : 
+                 mapText.includes('ancient') ? 'ancient' :
+                 mapText.includes('vertigo') ? 'vertigo' :
+                 mapText.includes('nuke') ? 'nuke' :
+                 mapText.includes('overpass') ? 'overpass' : 'Unknown';
       
-      // Get live game log entries from the gamelog container
+      // Get live game log entries from the new gamelog structure
       const gameLogEntries: any[] = [];
-      const gamelogContainer = document.querySelector('.gamelog .list');
+      const gamelogContainer = document.querySelector('.list.desktop');
       if (gamelogContainer) {
         const logElements = gamelogContainer.querySelectorAll('.gamelogBox');
         logElements.forEach((el, index) => {
-          if (index < 15) { // Get last 15 entries
+          if (index < 20) { // Get last 20 entries
             const text = el.textContent?.trim();
             const className = el.className;
             let type = 'other';
@@ -230,28 +231,36 @@ async function extractLiveData(page: Page): Promise<MatchData | null> {
             else if (className.includes('roundStart')) type = 'round_start';
             else if (className.includes('winner')) type = 'round_end';
             else if (className.includes('quitGame')) type = 'quit';
-            else if (className.includes('bomb')) type = 'bomb';
+            else if (className.includes('bombPlant') || className.includes('bomb')) type = 'bomb';
+            else if (className.includes('playerSuicide')) type = 'suicide';
             
-            if (text && text.length > 5) {
-              gameLogEntries.push({ text, type, className });
+            if (text && text.length > 3) {
+              gameLogEntries.push({ 
+                text, 
+                type, 
+                className,
+                timestamp: new Date()
+              });
             }
           }
         });
       }
       
-      // Get player stats from the scoreboard tables
+      // Get player stats from the new scoreboard structure
       const scoreboardData: any = {};
       
-      // CT team stats
+      // CT team stats - using the new table structure
       const ctPlayers = document.querySelectorAll('.ctPlayerBg');
       ctPlayers.forEach(row => {
         const playerName = row.querySelector('.nameCell')?.textContent?.trim();
-        const kills = row.querySelector('.killCell')?.textContent?.trim();
-        const deaths = row.querySelector('.deathCell')?.textContent?.trim();
-        const assists = row.querySelector('.assistCell')?.textContent?.trim();
-        const adr = row.querySelector('.adrCell')?.textContent?.trim();
-        const money = row.querySelector('.moneyCell')?.textContent?.trim();
-        const hp = row.querySelector('.hp-text')?.textContent?.trim();
+        const kills = row.querySelector('.killCell')?.textContent?.trim() || '0';
+        const deaths = row.querySelector('.deathCell')?.textContent?.trim() || '0';
+        const assists = row.querySelector('.assistCell')?.textContent?.trim() || '0';
+        const adr = row.querySelector('.adrCell')?.textContent?.trim() || '0';
+        const moneyElement = row.querySelector('.moneyCell');
+        const money = moneyElement?.textContent?.replace('$', '').trim() || '0';
+        const hpElement = row.querySelector('.hp-text');
+        const hp = hpElement?.textContent?.trim() || '100';
         
         if (playerName) {
           scoreboardData[playerName] = { 
@@ -260,16 +269,18 @@ async function extractLiveData(page: Page): Promise<MatchData | null> {
         }
       });
       
-      // T team stats
+      // T team stats - using the new table structure
       const tPlayers = document.querySelectorAll('.tPlayerBg');
       tPlayers.forEach(row => {
         const playerName = row.querySelector('.nameCell')?.textContent?.trim();
-        const kills = row.querySelector('.killCell')?.textContent?.trim();
-        const deaths = row.querySelector('.deathCell')?.textContent?.trim();
-        const assists = row.querySelector('.assistCell')?.textContent?.trim();
-        const adr = row.querySelector('.adrCell')?.textContent?.trim();
-        const money = row.querySelector('.moneyCell')?.textContent?.trim();
-        const hp = row.querySelector('.hp-text')?.textContent?.trim();
+        const kills = row.querySelector('.killCell')?.textContent?.trim() || '0';
+        const deaths = row.querySelector('.deathCell')?.textContent?.trim() || '0';
+        const assists = row.querySelector('.assistCell')?.textContent?.trim() || '0';
+        const adr = row.querySelector('.adrCell')?.textContent?.trim() || '0';
+        const moneyElement = row.querySelector('.moneyCell');
+        const money = moneyElement?.textContent?.replace('$', '').trim() || '0';
+        const hpElement = row.querySelector('.hp-text');
+        const hp = hpElement?.textContent?.trim() || '100';
         
         if (playerName) {
           scoreboardData[playerName] = { 
@@ -278,17 +289,17 @@ async function extractLiveData(page: Page): Promise<MatchData | null> {
         }
       });
       
-             // Get round history
-       const roundHistory: string[] = [];
-       const historyIcons = document.querySelectorAll('.historyIcon img');
-       historyIcons.forEach(icon => {
-         const src = (icon as HTMLImageElement).src;
-         if (src.includes('ct_win')) roundHistory.push('CT');
-         else if (src.includes('t_win')) roundHistory.push('T');
-         else if (src.includes('bomb_exploded')) roundHistory.push('💣');
-         else if (src.includes('bomb_defused')) roundHistory.push('🔧');
-         else if (src.includes('stopwatch')) roundHistory.push('⏰');
-       });
+      // Get round history from the new structure
+      const roundHistory: string[] = [];
+      const historyIcons = document.querySelectorAll('.historyIcon img');
+      historyIcons.forEach(icon => {
+        const src = (icon as HTMLImageElement).src;
+        if (src.includes('ct_win')) roundHistory.push('CT');
+        else if (src.includes('t_win')) roundHistory.push('T');
+        else if (src.includes('bomb_exploded')) roundHistory.push('💣');
+        else if (src.includes('bomb_defused')) roundHistory.push('🔧');
+        else if (src.includes('stopwatch')) roundHistory.push('⏰');
+      });
 
       return { 
         team1: team1Name, 
@@ -433,6 +444,9 @@ function writeLogEntry(entry: GameLogEntry) {
       break;
     case 'quit':
       icon = '❌';
+      break;
+    case 'suicide':
+      icon = '💀';
       break;
   }
   
